@@ -1,20 +1,22 @@
 AI YouTube Thumbnail Generator
-A production-quality React + TypeScript app that generates YouTube thumbnails via a multi-stage AI pipeline.
+A production-quality React + TypeScript app that generates YouTube thumbnails via a multi-stage AI pipeline — completely free to run.
+Tech Stack
+LayerTechnologyFrontendReact 18, TypeScript, Tailwind CSS v4State ManagementZustandStrategy GenerationGroq API (LLaMA 3.1 8B Instant)Image GenerationHugging Face Inference API (FLUX.1-schnell)Canvas CompositorHTML5 Canvas APIBuild ToolVite
 Architecture
 User Input
   │
   ▼
 ┌──────────────────────────────────────────────────────┐
-│  Stage 1 — Strategy (Claude claude-sonnet-4-20250514)         │
+│  Stage 1 — Strategy (Groq / LLaMA 3.1 8B)           │
 │  Generates: title, subtitle, emotion, composition,   │
-│             color palette, FLUX image prompt          │
+│             color palette, image prompt              │
 └──────────────────────────────────────────────────────┘
   │
   ▼
 ┌──────────────────────────────────────────────────────┐
-│  Stage 2 — Image Generation (Fal.ai / FLUX Schnell)  │
-│  Input:  refined imagePrompt from Claude strategy    │
-│  Output: 1280×720 background image URL               │
+│  Stage 2 — Image Generation (Hugging Face / FLUX)    │
+│  Input:  refined imagePrompt from strategy           │
+│  Output: 1280×720 background image blob              │
 └──────────────────────────────────────────────────────┘
   │
   ▼
@@ -27,37 +29,53 @@ User Input
 Project Structure
 src/
 ├── components/
-│   ├── PromptForm.tsx          # Title + style notes input
-│   ├── PresetSelector.tsx      # Gaming / Tech / Vlog presets
-│   ├── ThumbnailPreview.tsx    # Canvas display + loading overlay
-│   ├── LoadingOverlay.tsx      # Spinner with cancel support
-│   └── QuickEditor.tsx         # Live text override + download
+│   ├── PromptForm.tsx             # Title + style notes input
+│   ├── PresetSelector.tsx         # Gaming / Tech / Vlog presets
+│   ├── ThumbnailPreview.tsx       # Canvas display + loading overlay
+│   ├── LoadingOverlay.tsx         # Spinner with cancel support
+│   └── QuickEditor.tsx            # Live text override + download
 ├── hooks/
 │   └── useThumbnailGeneration.ts  # Full pipeline orchestration
 ├── lib/
-│   ├── ai.ts                   # Claude + Fal API clients
-│   ├── canvas.ts               # Decomposed canvas draw functions
-│   ├── prompts.ts              # Prompt templates
-│   └── store.ts                # Zustand global state
+│   ├── ai.ts                      # Groq + Hugging Face API clients
+│   ├── canvas.ts                  # Decomposed canvas draw functions
+│   ├── prompts.ts                 # Prompt templates
+│   └── store.ts                   # Zustand global state
 ├── constants/
-│   └── presets.ts              # Preset definitions + canvas dimensions
+│   └── presets.ts                 # Preset definitions + canvas dimensions
 └── types/
-    └── index.ts                # All TypeScript types
+    └── index.ts                   # All TypeScript types
 Setup
 bashnpm install
 cp .env.example .env.local
-# Fill in ANTHROPIC_API_KEY and VITE_FAL_KEY
+# Fill in your free API keys (see below)
 npm run dev
-Key Features
+API Keys (both free)
+Groq — Strategy Generation
 
-Multi-stage AI pipeline: Claude for strategy → FLUX for image generation
-Proper TypeScript: Fully typed including ThumbnailStrategy, ThumbnailPreset, GenerationStage
-Zustand state management: Clean store with actions, no useState explosion
-AbortController: Request cancellation on new generation or component unmount
-Retry logic: 3-attempt retry with exponential backoff on Claude API calls
-Decomposed canvas: drawBackground, drawOverlay, drawTitle, drawSubtitle, drawAccentBar
-Live quick-edit: Debounced re-composite on every keystroke
-API key safety: Keys proxied through Vite dev server; production should use a backend route
+Go to console.groq.com
+Click Create API Key
+Add to .env.local as VITE_GROQ_API_KEY
 
-Production Considerations
-In production, move AI calls to a backend route (/api/generate-strategy, /api/generate-image) so API keys are never exposed in the browser bundle. The Vite dev proxy in vite.config.ts handles this in development.
+Free tier: 14,400 requests/day, no credit card needed.
+Hugging Face — Image Generation
+
+Go to huggingface.co/settings/tokens
+Click New token → Role: Read
+Add to .env.local as VITE_HF_TOKEN
+
+Free tier: generous rate limits, no credit card needed.
+.env.local
+bashVITE_GROQ_API_KEY=your_groq_key_here
+VITE_HF_TOKEN=your_huggingface_token_here
+Key Engineering Features
+
+Multi-stage AI pipeline — Groq handles fast text strategy, FLUX handles image synthesis; cleanly separated concerns
+Fully typed — ThumbnailStrategy, ThumbnailPreset, GenerationStage, ThumbnailVariant types throughout
+Zustand state management — single store with actions, no useState explosion
+AbortController — request cancellation on new generation or component unmount, prevents race conditions
+Retry with backoff — 3-attempt retry with exponential backoff on Groq API calls
+Decomposed canvas — drawBackground, drawOverlay, drawTitle, drawSubtitle, drawAccentBar as isolated pure functions
+Blob URL image loading — HuggingFace images fetched as blobs so canvas can draw them without CORS taint
+Graceful fallback — if image generation fails, canvas falls back to a styled dark gradient so the app never crashes
+Live quick-edit — debounced re-composite on every keystroke, instant preview updates
