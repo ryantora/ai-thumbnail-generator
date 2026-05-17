@@ -1,5 +1,5 @@
 AI YouTube Thumbnail Generator
-A production-quality React + TypeScript app that generates YouTube thumbnails via a multi-stage AI pipeline — completely free to run.
+A production-quality React + TypeScript app that generates YouTube thumbnails via a multi-stage AI pipeline
 
 Tech Stack:
 React 18, TypeScript, Tailwind CSS v4
